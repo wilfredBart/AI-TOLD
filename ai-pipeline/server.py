@@ -1,37 +1,24 @@
-from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
-import uuid
 
-
-HOST = "127.0.0.1"
-PORT = 8765
-
-
-def make_message(message_type, source, target, payload):
-    return {
-        "type": message_type,
-        "requestId": str(uuid.uuid4()),
-        "source": source,
-        "target": target,
-        "payload": payload,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    }
+from model_client import get_model_response
+from pipeline_api import (
+    BASE_URL,
+    CHAT_ROUTE,
+    HOST,
+    PING_ROUTE,
+    PORT,
+    build_chat_response,
+    build_error_response,
+    build_ping_response,
+    validate_chat_request,
+)
 
 
 class AIHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path == "/ping":
-            response = make_message(
-                "pong",
-                "ai-pipeline",
-                "tauri",
-                {
-                    "endpoint": "/ping",
-                    "status": "ok",
-                    "service": "ai-pipeline",
-                },
-            )
+        if self.path == PING_ROUTE:
+            response = build_ping_response()
 
             body = json.dumps(response).encode("utf-8")
 
@@ -47,7 +34,7 @@ class AIHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        if self.path != "/chat":
+        if self.path != CHAT_ROUTE:
             self.send_response(404)
             self.end_headers()
             return
@@ -60,24 +47,29 @@ class AIHandler(BaseHTTPRequestHandler):
         except json.JSONDecodeError:
             payload = {}
 
-        message = payload.get("message", "") if isinstance(payload, dict) else ""
-
-        response = make_message(
-            "chat_response",
-            "ai-pipeline",
-            "frontend",
-            {
-                "endpoint": "/chat",
-                "status": "ok",
-                "service": "ai-pipeline",
-                "userMessage": message,
-                "response": f"AI-pipeline echo: {message or 'hello'}",
-            },
-        )
+        try:
+            message = validate_chat_request(payload)
+            model_reply = get_model_response(message)
+            response = build_chat_response(message, response_text=model_reply)
+            status_code = 200
+        except (TypeError, ValueError) as exc:
+            response = build_error_response(
+                "INVALID_CHAT_REQUEST",
+                str(exc),
+                target="frontend",
+            )
+            status_code = 400
+        except RuntimeError as exc:
+            response = build_error_response(
+                "MODEL_UNAVAILABLE",
+                str(exc),
+                target="frontend",
+            )
+            status_code = 503
 
         body = json.dumps(response).encode("utf-8")
 
-        self.send_response(200)
+        self.send_response(status_code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
@@ -90,8 +82,8 @@ class AIHandler(BaseHTTPRequestHandler):
 def main():
     server = HTTPServer((HOST, PORT), AIHandler)
 
-    print(f"AI pipeline listening on http://{HOST}:{PORT}")
-    print("Ping endpoint: /ping")
+    print(f"AI pipeline listening on {BASE_URL}")
+    print(f"Ping endpoint: {PING_ROUTE}")
 
     try:
         server.serve_forever()

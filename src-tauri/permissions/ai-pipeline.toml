@@ -4,3 +4,8 @@
 identifier = "allow-ping"
 description = "Allows the frontend to call the AI pipeline ping command."
 commands.allow = ["ai_pipeline_ping"]
+
+[[permission]]
+identifier = "allow-chat"
+description = "Allows the frontend to call the AI pipeline chat command."
+commands.allow = ["ai_pipeline_chat"]

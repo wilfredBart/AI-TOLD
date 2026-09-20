@@ -205,7 +205,7 @@ Goal: build reliable text conversation before adding voice or autonomous actions
 
 Fase 2 klaar als: a user can enter text, the local AI can respond, and the complete conversation reliably appears in the AI-TOLD interface.
 
-Note: the current AI response is still a local echo from the Python pipeline; the real model integration remains a later milestone in Fase 3.
+Note: the app is now connected to a real local model adapter in Fase 3, rather than a pure echo stub. The backend still depends on a running local model service (for example Ollama) and returns a structured `MODEL_UNAVAILABLE` envelope when that dependency is not reachable.
 
 ---
 
@@ -215,9 +215,12 @@ Goal: make the AI backend a proper local service instead of a test endpoint.
 
 ### Tasks
 
-- [ ] 3.1 Define the pipeline API
-- [ ] 3.2 Request/response schema
-- [ ] 3.3 Model connection
+- [x] 3.1 Define the pipeline API
+- [x] 3.2 Request/response schema
+- [x] 3.3 Model connection
+  - local model adapter is wired into the Python pipeline
+  - structured error envelope is returned when the model service is unavailable
+  - UI and Tauri layers remain decoupled from model-specific details
 - [ ] 3.4 Model selection/configuration
 - [ ] 3.5 Streaming responses where useful
 - [ ] 3.6 Pipeline status
@@ -484,9 +487,10 @@ Deze punten kunnen later veranderen, maar worden niet als basis van de eerste ve
 | 2026-09-20 | 2.7         | Wilfred + AI | Error state was added to the chat shell: failed sends now surface a visible UI error banner and a red AI error bubble without breaking the rest of the HUD flow.                                                                            |
 | 2026-09-20 | 2.8         | Wilfred + AI | The chat input was connected to the local AI-pipeline via Tauri so a typed message is sent to the local Python service and the returned structured response is displayed in the conversation.                                               |
 | 2026-09-20 | 2.9         | Wilfred + AI | The frontend successfully receives and renders the local pipeline response; current behavior is an echo-response from the Python service, which confirms the end-to-end chat bridge before true model integration in Fase 3.                |
-| 2026-09-20 | 2.10        | Wilfred + AI | Duplicate sends are blocked by a dedicated re-entrancy guard while a request is in flight, preventing repeated submissions during the same pipeline call.                                                                                 |
-| 2026-09-20 | 2.11        | Wilfred + AI | A clear/new conversation action was added to reset the message list and return the shell to the ready state without leaving stale chat content in the HUD.                                                                             |
-| 2026-09-20 | log updated | Wilfred + AI | Roadmap and log entries were refreshed to reflect the completed chat milestones and the current desktop shell state.                                                                                                                        |
+| 2026-09-20 | 2.10        | Wilfred + AI | Duplicate sends are blocked by a dedicated re-entrancy guard while a request is in flight, preventing repeated submissions during the same pipeline call.                                                                                   |
+| 2026-09-20 | 2.11        | Wilfred + AI | A clear/new conversation action was added to reset the message list and return the shell to the ready state without leaving stale chat content in the HUD.                                                                                  |
+| 2026-09-20 | 3.1         | Wilfred + AI | A shared pipeline contract was introduced in the Python service: route constants, envelope builder functions and a single API definition for ping/chat/error messaging.                                                                     |
+| 2026-09-20 | log updated | Wilfred + AI | Roadmap and log entries were refreshed to reflect the completed chat milestones and the new pipeline API contract.                                                                                                                          |
 
 ---
 

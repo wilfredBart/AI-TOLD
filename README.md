@@ -8,8 +8,9 @@ De volgende milestones zijn voor nu als gedaan beschouwd:
 
 - 1.6 T-OLED visual language
 - 1.7 Validate visual usability
+- 3.3 Model connection
 
-De focus ligt nu op het stabiliseren van de app-shell en het voorbereiden van de volgende echte product-onderdelen, zoals een echte chat/voice flow en verdere AI-functionaliteit.
+De focus ligt nu op het stabiliseren van de chatflow, het model-contract en de volgende lokale AI-onderdelen zoals model selectie, streaming en voice input.
 
 ## Architectuur
 
@@ -35,6 +36,17 @@ Voor de lokale AI-pipeline apart opstarten:
 cd ai-toled-app
 python .\ai-pipeline\server.py
 ```
+
+De Python pipeline probeert standaard een lokaal Ollama-model te benaderen op `http://127.0.0.1:11434`. De modelnaam kan je aanpassen met de environment variable `AI_PIPELINE_MODEL`.
+
+Voorbeeld:
+
+```bash
+$env:AI_PIPELINE_MODEL = "llama3.2"
+python .\ai-pipeline\server.py
+```
+
+Als Ollama niet draait, retourneert de pipeline een gestructureerde `error`-envelope met code `MODEL_UNAVAILABLE` in plaats van een vage backend-fout.
 
 ## Bediening
 
