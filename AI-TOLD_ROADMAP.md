@@ -158,7 +158,7 @@ Goal: turn the existing desktop shell into the actual AI-TOLD interface.
   - microphone control is already present in the shell and can be treated as the current placeholder for the future voice flow
 - [x] 1.5 Application status area
   - status display already exists in the current application foundation and remains the correct integration point for later pipeline state
-- [ ] 1.6 T-OLED visual language
+- [x] 1.6 T-OLED visual language
   - transparent display appearance
   - visible background through the interface
   - subtle background blur/softening where needed for usability
@@ -171,7 +171,7 @@ Goal: turn the existing desktop shell into the actual AI-TOLD interface.
   - hover/focus states that clearly identify interactive elements
   - no large dark background panel as the primary interface surface
   - no traditional card/dashboard layout as the primary visual structure
-- [ ] 1.7 Validate visual usability
+- [x] 1.7 Validate visual usability
   - underlying Windows content must not compete with AI-TOLD controls
   - transparent areas must remain readable
   - interactive elements must always be visually distinguishable
@@ -466,7 +466,14 @@ Deze punten kunnen later veranderen, maar worden niet als basis van de eerste ve
 | 2026-09-20 | 0.11        | Wilfred + AI | Shared message envelope implemented across frontend, Tauri and AI-pipeline; /ping now returns a structured JSON object with type, requestId, source, target, payload and timestamp.                                                         |
 | 2026-09-20 | 0.12        | Wilfred + AI | Backend unavailable handling added: Tauri now returns a structured `type: "error"` envelope with a `payload.code` such as `AI_PIPELINE_UNAVAILABLE`, and the frontend renders the fallback state instead of raw exception strings.          |
 | 2026-09-20 | 0.13        | Wilfred + AI | Project conventions established: JavaScript remains the default unless a TypeScript decision is made later; components stay small and focused; AI logic remains outside UI components and visual concerns stay separate from backend logic. |
-| 2026-09-20 | log updated | Wilfred + AI | Roadmap and protocol updates committed and pushed to origin/main after local validation with `cargo check` and `npm run build`.                                                                                                             |
+| 2026-09-20 | 1.1         | Wilfred + AI | Main desktop shell layout stabilized around the avatar stage, chat region, input surface and status strip; the app now behaves like a real interface shell rather than a bare prototype.                                                    |
+| 2026-09-20 | 1.2         | Wilfred + AI | Text input field was integrated as part of the main shell and remains the active interaction surface for the current placeholder flow.                                                                                                      |
+| 2026-09-20 | 1.3         | Wilfred + AI | Primary send action pattern was established in the shell UI and kept aligned with the rest of the compact HUD interaction language.                                                                                                         |
+| 2026-09-20 | 1.4         | Wilfred + AI | Microphone control was added as the current placeholder voice action and visually aligned with the icon system and HUD styling.                                                                                                             |
+| 2026-09-20 | 1.5         | Wilfred + AI | Status area was integrated as the app's live state indicator and continues to act as the placeholder for backend health and AI pipeline state information.                                                                                  |
+| 2026-09-20 | 1.6         | Wilfred + AI | T-OLED visual language finalized for now: transparent shell, low-contrast glass panels, cyan edge lighting, glow accents, scanline detail, floating HUD layout and compact typography.                                                      |
+| 2026-09-20 | 1.7         | Wilfred + AI | Visual usability validated against desktop backgrounds; opacity, contrast and interactive states were tuned so the transparent shell stays readable without losing the floating HUD effect.                                                 |
+| 2026-09-20 | log updated | Wilfred + AI | Roadmap and protocol updates refreshed to reflect the completed interface and visual milestones; README and roadmap status now match the current desktop shell implementation.                                                              |
 
 ---
 
