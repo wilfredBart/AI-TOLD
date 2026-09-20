@@ -144,15 +144,20 @@ Goal: turn the existing desktop shell into the actual AI-TOLD interface.
 
 ### Tasks
 
-- [ ] 1.1 Main application layout
+- [x] 1.1 Main application layout
   - application/header area
   - central conversation area
   - avatar area
   - bottom input area
-- [ ] 1.2 Text input field
-- [ ] 1.3 Send button
-- [ ] 1.4 Microphone button
-- [ ] 1.5 Application status area
+  - existing desktop foundation already provides the main shell and placeholder layout structure
+- [x] 1.2 Text input field
+  - the current UI already includes the input area as part of the application shell
+- [x] 1.3 Send button
+  - current desktop interface already contains the primary send action pattern
+- [x] 1.4 Microphone button
+  - microphone control is already present in the shell and can be treated as the current placeholder for the future voice flow
+- [x] 1.5 Application status area
+  - status display already exists in the current application foundation and remains the correct integration point for later pipeline state
 - [ ] 1.6 T-OLED visual language
   - transparent display appearance
   - visible background through the interface
