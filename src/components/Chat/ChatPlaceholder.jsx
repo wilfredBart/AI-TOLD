@@ -40,6 +40,10 @@ export default function ChatPlaceholder() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    testPipeline();
+  }, []);
+
   async function handleSend() {
     const text = draft.trim();
     if (!text || testing || sendingRef.current) return;
@@ -91,7 +95,7 @@ export default function ChatPlaceholder() {
     setStatus("MIC TESTING...");
 
     try {
-      const response = await invoke("ai_pipeline_ping");
+      const response = await invoke("ai_pipeline_status");
       const messageType = response?.type ?? response?.payload?.type;
       const payload = response?.payload ?? response;
       const source = payload?.source ?? response?.source ?? "ai-pipeline";
@@ -103,13 +107,29 @@ export default function ChatPlaceholder() {
         return;
       }
 
-      if (messageType === "pong" || payload?.type === "pong") {
-        setStatus(`MIC READY · ${source}`);
+      if (messageType === "status" || payload?.status === "ready") {
+        const modelName = payload?.model ?? "tinyllama";
+        setStatus(`MIC READY · ${source} · ${modelName}`);
       } else {
         setStatus("MIC TEST RESPONDED");
       }
     } catch (error) {
-      setStatus(`MIC ERROR · ${String(error)}`);
+      try {
+        const fallback = await invoke("ai_pipeline_ping");
+        const payload = fallback?.payload ?? fallback;
+        const fallbackType = fallback?.type ?? payload?.type;
+
+        if (fallbackType === "error") {
+          const errorCode = payload?.code ?? "AI_PIPELINE_ERROR";
+          const errorMessage = payload?.message ?? "Unknown pipeline error";
+          setStatus(`MIC UNAVAILABLE · ${errorCode} · ${errorMessage}`);
+          return;
+        }
+
+        setStatus("MIC READY · ai-pipeline");
+      } catch (fallbackError) {
+        setStatus(`MIC ERROR · ${String(fallbackError)}`);
+      }
     } finally {
       setTesting(false);
     }

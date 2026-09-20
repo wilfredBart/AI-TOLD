@@ -10,7 +10,8 @@ BASE_URL = f"http://{HOST}:{PORT}"
 
 PING_ROUTE = "/ping"
 CHAT_ROUTE = "/chat"
-DEFAULT_MODEL = os.getenv("AI_PIPELINE_MODEL", "llama3.2")
+STATUS_ROUTE = "/status"
+DEFAULT_MODEL = os.getenv("AI_PIPELINE_MODEL", "tinyllama")
 
 
 def create_envelope(message_type: str, source: str, target: str, payload: dict):
@@ -36,7 +37,58 @@ def validate_chat_request(payload: object):
         raise TypeError("chat request 'message' must be a string")
 
     cleaned_message = message.strip()
+    if not cleaned_message:
+        raise ValueError("chat request payload must include a non-empty 'message' field")
+
+    conversation = payload.get("conversation", [])
+    if conversation is None:
+        conversation = []
+
+    if not isinstance(conversation, list):
+        raise TypeError("chat request 'conversation' must be a list of message objects")
+
+    for index, item in enumerate(conversation):
+        if not isinstance(item, dict):
+            raise TypeError(f"conversation item at index {index} must be an object")
+
+        role = item.get("role", "user")
+        content = item.get("content", "")
+        if role not in {"user", "assistant", "system"}:
+            raise ValueError(f"conversation item at index {index} has unsupported role '{role}'")
+        if not isinstance(content, str):
+            raise TypeError(f"conversation item at index {index} must have a string 'content' field")
+
     return cleaned_message
+
+
+def extract_conversation(payload: dict):
+    if not isinstance(payload, dict):
+        return []
+
+    conversation = payload.get("conversation", [])
+    if not conversation:
+        return []
+
+    if not isinstance(conversation, list):
+        raise TypeError("chat request 'conversation' must be a list of message objects")
+
+    normalized = []
+    for index, item in enumerate(conversation):
+        if not isinstance(item, dict):
+            raise TypeError(f"conversation item at index {index} must be an object")
+
+        role = item.get("role", "user")
+        content = item.get("content", "")
+        if role not in {"user", "assistant", "system"}:
+            raise ValueError(f"conversation item at index {index} has unsupported role '{role}'")
+        if not isinstance(content, str):
+            raise TypeError(f"conversation item at index {index} must have a string 'content' field")
+
+        cleaned_content = content.strip()
+        if cleaned_content:
+            normalized.append({"role": role, "content": cleaned_content})
+
+    return normalized
 
 
 def build_ping_response():
@@ -48,6 +100,24 @@ def build_ping_response():
             "endpoint": PING_ROUTE,
             "status": "ok",
             "service": "ai-pipeline",
+            "model": DEFAULT_MODEL,
+        },
+    )
+
+
+def build_status_response(state: str = "ready", model: str | None = None):
+    normalized_state = (state or "ready").strip().lower()
+    selected_model = model or DEFAULT_MODEL
+
+    return create_envelope(
+        "status",
+        "ai-pipeline",
+        "frontend",
+        {
+            "endpoint": STATUS_ROUTE,
+            "status": normalized_state,
+            "service": "ai-pipeline",
+            "model": selected_model,
         },
     )
 
@@ -83,5 +153,6 @@ def build_error_response(code: str, message: str, target: str = "frontend"):
         {
             "code": code,
             "message": message,
+            "status": "error",
         },
     )

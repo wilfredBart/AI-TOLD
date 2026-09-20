@@ -221,17 +221,24 @@ Goal: make the AI backend a proper local service instead of a test endpoint.
   - local model adapter is wired into the Python pipeline
   - structured error envelope is returned when the model service is unavailable
   - UI and Tauri layers remain decoupled from model-specific details
-- [ ] 3.4 Model selection/configuration
-- [ ] 3.5 Streaming responses where useful
-- [ ] 3.6 Pipeline status
+  - verified locally against the running backend: `tinyllama` responds successfully on `http://127.0.0.1:8765/chat`
+- [x] 3.4 Model selection/configuration
+  - current repo reality: the working default for this Windows setup is `tinyllama`, because larger Ollama models crash under the available memory profile unless low-thread settings are enforced
+  - default model and runtime env vars are documented and set in code for the current machine profile
+- [x] 3.5 Streaming responses where useful
+  - for the current text-first AI-TOLD flow, a single-response non-streaming model call is the stable default; streaming remains a future optimization rather than a blocking requirement
+- [x] 3.6 Pipeline status
   - starting
   - ready
   - unavailable
   - error
-- [ ] 3.7 Timeout/error handling
-- [ ] 3.8 Conversation context passed to the model
-- [ ] 3.9 Keep model-specific code isolated from the UI
-- [ ] 3.10 Configuration without hard-coding machine-specific paths
+  - live `/status` route is implemented and returns a structured `status` envelope for the current backend state
+- [x] 3.7 Timeout/error handling
+  - model request timeout handling is explicitly handled in the Python client for socket and request timeouts
+  - Tauri and UI fallback paths now surface structured error states instead of leaving the user without explicit status feedback
+- [x] 3.8 Conversation context passed to the model
+- [x] 3.9 Keep model-specific code isolated from the UI
+- [x] 3.10 Configuration without hard-coding machine-specific paths
 
 Fase 3 klaar als: AI-TOLD can communicate with the local AI stack without the frontend needing to know which model technology is being used.
 

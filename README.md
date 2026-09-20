@@ -39,14 +39,17 @@ python .\ai-pipeline\server.py
 
 De Python pipeline probeert standaard een lokaal Ollama-model te benaderen op `http://127.0.0.1:11434`. De modelnaam kan je aanpassen met de environment variable `AI_PIPELINE_MODEL`.
 
-Voorbeeld:
+Op deze Windows-machine is een kleine modelruntime stabieler dan de grotere 7B/8B modellen. De projectdefault is daarom nu `tinyllama`, en voor de lokale Ollama-start moet het geheugenverbruik worden beperkt met een lage threadcount:
 
 ```bash
-$env:AI_PIPELINE_MODEL = "llama3.2"
+$env:AI_PIPELINE_MODEL = "tinyllama"
+$env:AI_PIPELINE_OLLAMA_URL = "http://127.0.0.1:11434"
+$env:OLLAMA_NUM_THREADS = "1"
+$env:OPENBLAS_NUM_THREADS = "1"
 python .\ai-pipeline\server.py
 ```
 
-Als Ollama niet draait, retourneert de pipeline een gestructureerde `error`-envelope met code `MODEL_UNAVAILABLE` in plaats van een vage backend-fout.
+Als Ollama niet draait of een model te groot is voor de machine, retourneert de pipeline een gestructureerde `error`-envelope met code `MODEL_UNAVAILABLE` in plaats van een vage backend-fout.
 
 ## Bediening
 

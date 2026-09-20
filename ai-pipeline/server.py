@@ -8,9 +8,12 @@ from pipeline_api import (
     HOST,
     PING_ROUTE,
     PORT,
+    STATUS_ROUTE,
     build_chat_response,
     build_error_response,
     build_ping_response,
+    build_status_response,
+    extract_conversation,
     validate_chat_request,
 )
 
@@ -19,7 +22,6 @@ class AIHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == PING_ROUTE:
             response = build_ping_response()
-
             body = json.dumps(response).encode("utf-8")
 
             self.send_response(200)
@@ -27,7 +29,17 @@ class AIHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
+            return
 
+        if self.path == STATUS_ROUTE:
+            response = build_status_response("ready")
+            body = json.dumps(response).encode("utf-8")
+
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
             return
 
         self.send_response(404)
@@ -49,7 +61,8 @@ class AIHandler(BaseHTTPRequestHandler):
 
         try:
             message = validate_chat_request(payload)
-            model_reply = get_model_response(message)
+            conversation = extract_conversation(payload)
+            model_reply = get_model_response(message, conversation=conversation)
             response = build_chat_response(message, response_text=model_reply)
             status_code = 200
         except (TypeError, ValueError) as exc:

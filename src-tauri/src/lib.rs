@@ -66,20 +66,12 @@ fn window_hide_to_tray(window: tauri::WebviewWindow) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn window_set_pinned(
-    window: tauri::WebviewWindow,
-    pinned: bool,
-) -> Result<(), String> {
-    window
-        .set_always_on_top(pinned)
-        .map_err(|e| e.to_string())
+fn window_set_pinned(window: tauri::WebviewWindow, pinned: bool) -> Result<(), String> {
+    window.set_always_on_top(pinned).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn window_dock(
-    window: tauri::WebviewWindow,
-    side: String,
-) -> Result<(), String> {
+fn window_dock(window: tauri::WebviewWindow, side: String) -> Result<(), String> {
     let monitor = window
         .current_monitor()
         .map_err(|e| e.to_string())?
@@ -118,6 +110,41 @@ fn window_undock(window: tauri::WebviewWindow) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn ai_pipeline_status() -> Result<serde_json::Value, String> {
+    let response = match reqwest::get("http://127.0.0.1:8765/status").await {
+        Ok(res) => res,
+        Err(e) => {
+            return Ok(serde_json::to_value(PipelineEnvelope::error(
+                "AI_PIPELINE_UNAVAILABLE",
+                format!("AI pipeline niet bereikbaar: {e}"),
+            ))
+            .map_err(|err| format!("Kan error response serialiseren: {err}"))?);
+        }
+    };
+
+    if !response.status().is_success() {
+        return Ok(serde_json::to_value(PipelineEnvelope::error(
+            "AI_PIPELINE_HTTP_ERROR",
+            format!("AI pipeline gaf HTTP status {}", response.status()),
+        ))
+        .map_err(|err| format!("Kan error response serialiseren: {err}"))?);
+    }
+
+    let ai_payload = match response.json::<serde_json::Value>().await {
+        Ok(payload) => payload,
+        Err(e) => {
+            return Ok(serde_json::to_value(PipelineEnvelope::error(
+                "AI_PIPELINE_INVALID_RESPONSE",
+                format!("Ongeldige response van AI pipeline: {e}"),
+            ))
+            .map_err(|err| format!("Kan error response serialiseren: {err}"))?);
+        }
+    };
+
+    Ok(ai_payload)
+}
+
+#[tauri::command]
 async fn ai_pipeline_ping() -> Result<serde_json::Value, String> {
     let response = match reqwest::get("http://127.0.0.1:8765/ping").await {
         Ok(res) => res,
@@ -151,16 +178,21 @@ async fn ai_pipeline_ping() -> Result<serde_json::Value, String> {
 
     let envelope = PipelineEnvelope::pong(ai_payload);
 
-    serde_json::to_value(envelope)
-        .map_err(|e| format!("Kan response niet serialiseren: {e}"))
+    serde_json::to_value(envelope).map_err(|e| format!("Kan response niet serialiseren: {e}"))
 }
 
 #[tauri::command]
-async fn ai_pipeline_chat(message: String) -> Result<serde_json::Value, String> {
+async fn ai_pipeline_chat(
+    message: String,
+    conversation: Option<Vec<serde_json::Value>>,
+) -> Result<serde_json::Value, String> {
     let client = reqwest::Client::new();
     let response = match client
         .post("http://127.0.0.1:8765/chat")
-        .json(&serde_json::json!({ "message": message }))
+        .json(&serde_json::json!({
+            "message": message,
+            "conversation": conversation,
+        }))
         .send()
         .await
     {
@@ -211,6 +243,27 @@ fn toggle_main_window(app: &tauri::AppHandle) {
     }
 }
 
+fn open_help_url() {
+    let url = "https://github.com/wilfredBart/AI-TOLD";
+
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("cmd")
+            .args(["/C", "start", "", url])
+            .spawn();
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let _ = std::process::Command::new("open").arg(url).spawn();
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let _ = std::process::Command::new("xdg-open").arg(url).spawn();
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -222,6 +275,7 @@ pub fn run() {
             window_set_pinned,
             window_dock,
             window_undock,
+            ai_pipeline_status,
             ai_pipeline_ping,
             ai_pipeline_chat,
         ])
@@ -234,38 +288,30 @@ pub fn run() {
         .setup(|app| {
             #[cfg(desktop)]
             {
-                use tauri_plugin_global_shortcut::{
-                    Code,
-                    Modifiers,
-                    ShortcutState,
-                };
+                use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
 
-                app.handle()
-                    .plugin(
-                        tauri_plugin_global_shortcut::Builder::new()
-                            .with_shortcuts(["ctrl+shift+space"])?
-                            .with_handler(|app, shortcut, event| {
-                                if event.state == ShortcutState::Pressed
-                                    && shortcut.matches(
-                                        Modifiers::CONTROL | Modifiers::SHIFT,
-                                        Code::Space,
-                                    )
-                                {
-                                    toggle_main_window(app);
-                                }
-                            })
-                            .build(),
-                    )?;
+                app.handle().plugin(
+                    tauri_plugin_global_shortcut::Builder::new()
+                        .with_shortcuts(["ctrl+shift+space"])?
+                        .with_handler(|app, shortcut, event| {
+                            if event.state == ShortcutState::Pressed
+                                && shortcut
+                                    .matches(Modifiers::CONTROL | Modifiers::SHIFT, Code::Space)
+                            {
+                                toggle_main_window(app);
+                            }
+                        })
+                        .build(),
+                )?;
             }
 
-            let show_i =
-                MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
+            let show_i = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
 
-            let quit_i =
-                MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let help_i = MenuItem::with_id(app, "help", "Help", true, None::<&str>)?;
 
-            let menu =
-                Menu::with_items(app, &[&show_i, &quit_i])?;
+            let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+
+            let menu = Menu::with_items(app, &[&show_i, &help_i, &quit_i])?;
 
             let _tray = TrayIconBuilder::with_id("main-tray")
                 .icon(app.default_window_icon().unwrap().clone())
@@ -273,6 +319,10 @@ pub fn run() {
                 .tooltip("AI-TOLED  ·  Ctrl+Shift+Space")
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "show" => toggle_main_window(app),
+                    "help" => {
+                        open_help_url();
+                        toggle_main_window(app);
+                    }
                     "quit" => app.exit(0),
                     _ => {}
                 })
