@@ -1,0 +1,7 @@
+# Lokale AI pipeline – later invullen
+# faster-whisper
+# kokoro / piper
+# fastapi
+# uvicorn
+# websockets
+# ollama client (httpx)

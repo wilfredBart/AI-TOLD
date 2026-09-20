@@ -1,0 +1,11 @@
+[[permission]]
+identifier = "window-control"
+description = "Allow the frontend to control the frameless window"
+commands.allow = [
+  "window_minimize",
+  "window_toggle_maximize",
+  "window_hide_to_tray",
+  "window_set_pinned",
+  "window_dock",
+  "window_undock"
+]
