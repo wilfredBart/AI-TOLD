@@ -199,11 +199,13 @@ Goal: build reliable text conversation before adding voice or autonomous actions
 - [x] 2.6 Sending/loading state
 - [x] 2.7 Error state
 - [x] 2.8 Connect chat UI to the AI-pipeline
-- [ ] 2.9 Receive and display the AI response
+- [x] 2.9 Receive and display the AI response
 - [ ] 2.10 Prevent duplicate sends while a request is processing
 - [ ] 2.11 Clear/new conversation action
 
 Fase 2 klaar als: a user can enter text, the local AI can respond, and the complete conversation reliably appears in the AI-TOLD interface.
+
+Note: the current AI response is still a local echo from the Python pipeline; the real model integration remains a later milestone in Fase 3.
 
 ---
 
@@ -481,6 +483,7 @@ Deze punten kunnen later veranderen, maar worden niet als basis van de eerste ve
 | 2026-09-20 | 2.6         | Wilfred + AI | Sending/loading state was added to the shell: duplicate sends are blocked, input is disabled while transmitting, and a compact spinner shows that a message is in flight.                                                                   |
 | 2026-09-20 | 2.7         | Wilfred + AI | Error state was added to the chat shell: failed sends now surface a visible UI error banner and a red AI error bubble without breaking the rest of the HUD flow.                                                                            |
 | 2026-09-20 | 2.8         | Wilfred + AI | The chat input was connected to the local AI-pipeline via Tauri so a typed message is sent to the local Python service and the returned structured response is displayed in the conversation.                                               |
+| 2026-09-20 | 2.9         | Wilfred + AI | The frontend successfully receives and renders the local pipeline response; current behavior is an echo-response from the Python service, which confirms the end-to-end chat bridge before true model integration in Fase 3.                        |
 | 2026-09-20 | log updated | Wilfred + AI | Roadmap and log entries were refreshed to reflect the completed chat milestones and the current desktop shell state.                                                                                                                        |
 
 ---
