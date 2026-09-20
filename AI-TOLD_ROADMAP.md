@@ -192,7 +192,7 @@ Goal: build reliable text conversation before adding voice or autonomous actions
 - [x] 2.1 Text input field
 - [x] 2.2 Send button
 - [x] 2.3 Enter-to-send
-- [ ] 2.4 Conversation message component
+- [x] 2.4 Conversation message component
   - user message
   - AI message
 - [ ] 2.5 Conversation scrolling
@@ -457,8 +457,8 @@ Deze punten kunnen later veranderen, maar worden niet als basis van de eerste ve
 
 ## Log
 
-| Datum      | Stap | Wie          | Notitie                                                                                                                                                                                                                                      |
-| ---------- | ---- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Datum      | Stap | Wie          | Notitie                                                                                                                                                                                                                                     |
+| ---------- | ---- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ---------- | --- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ---------- | ----------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 2026-09-20 | plan | Wilfred + AI | Roadmap herwerkt op basis van de bestaande AI-TOLD/Grok projectgeschiedenis en de huidige desktop-foundation.                                                                                                                               |
 | 2026-09-20 | 0.1  | Wilfred + AI | Bestaande Tauri/React/JavaScript desktop-shell als uitgangspunt vastgelegd in plaats van opnieuw als fundament te plannen.                                                                                                                  |
 | 2026-09-20 | 0.2  | Wilfred + AI | Roadmapstructuur afgestemd op de werkwijze van `rack-docu-app`: één fase/punt tegelijk, testen door Wilfred, roadmap bijwerken na bevestiging.                                                                                              |
@@ -473,10 +473,9 @@ Deze punten kunnen later veranderen, maar worden niet als basis van de eerste ve
 | 2026-09-20 | 1.5  | Wilfred + AI | Status area was integrated as the app's live state indicator and continues to act as the placeholder for backend health and AI pipeline state information.                                                                                  |
 | 2026-09-20 | 1.6  | Wilfred + AI | T-OLED visual language finalized for now: transparent shell, low-contrast glass panels, cyan edge lighting, glow accents, scanline detail, floating HUD layout and compact typography.                                                      |
 | 2026-09-20 | 1.7  | Wilfred + AI | Visual usability validated against desktop backgrounds; opacity, contrast and interactive states were tuned so the transparent shell stays readable without losing the floating HUD effect.                                                 |
-| 2026-09-20 | 2.1  | Wilfred + AI | Text input field was activated as a real UI control so the user can type into the shell; the current chat placeholder remains the test surface before the actual chat pipeline is wired in.                                               |
-| 2026-09-20 | 2.2  | Wilfred + AI | Send action was implemented as a compact HUD control inside the input field; the button submits the current draft and clears it while keeping the existing placeholder status flow intact.                                               |
-| 2026-09-20 | 2.3  | Wilfred + AI | Enter key was wired to the same draft submission flow so typed input and keyboard submission use the same UX path in the current shell.                                                                                                    |
-| 2026-09-20 | log updated | Wilfred + AI | Roadmap and protocol updates refreshed to reflect the completed interface, visual and chat-input milestones; README and roadmap status now match the current desktop shell implementation.                                                  |
+| 2026-09-20 | 2.1  | Wilfred + AI | Text input field was activated as a real UI control so the user can type into the shell; the current chat placeholder remains the test surface before the actual chat pipeline is wired in.                                                 |
+| 2026-09-20 | 2.2  | Wilfred + AI | Send action was implemented as a compact HUD control inside the input field; the button submits the current draft and clears it while keeping the existing placeholder status flow intact.                                                  |
+| 2026-09-20 | 2.3  | Wilfred + AI | Enter key was wired to the same draft submission flow so typed input and keyboard submission use the same UX path in the current shell.                                                                                                     |     | 2026-09-20 | 2.4 | Wilfred + AI | Conversation message component was added as real message bubbles for both AI and user text, replacing the fixed status-only placeholder with an actual message list in the shell. |     | 2026-09-20 | log updated | Wilfred + AI | Roadmap and protocol updates refreshed to reflect the completed interface, visual and chat-input milestones; README and roadmap status now match the current desktop shell implementation. |
 
 ---
 
