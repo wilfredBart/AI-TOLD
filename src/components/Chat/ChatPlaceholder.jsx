@@ -12,8 +12,19 @@ export default function ChatPlaceholder() {
   const [sending, setSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [draft, setDraft] = useState("");
+  const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
+  const [microphoneMuted, setMicrophoneMuted] = useState(false);
+  const [microphonePermission, setMicrophonePermission] = useState("unknown");
+  const [audioDevices, setAudioDevices] = useState([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState("");
+  const [inputMode, setInputMode] = useState("text");
+  const [inputLevel, setInputLevel] = useState(0);
   const messagesEndRef = useRef(null);
   const sendingRef = useRef(false);
+  const microphoneStreamRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const meterAnimationRef = useRef(null);
   const [messages, setMessages] = useState(createWelcomeMessages);
 
   function addMessage(sender, text) {
@@ -40,9 +51,218 @@ export default function ChatPlaceholder() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  async function loadAudioDevices() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+      setAudioDevices([]);
+      setSelectedDeviceId("");
+      setStatus("MIC UNAVAILABLE · AUDIO_NOT_SUPPORTED");
+      return [];
+    }
+
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const inputs = devices.filter((device) => device.kind === "audioinput");
+      setAudioDevices(inputs);
+
+      if (inputs.length > 0) {
+        const preferredDevice =
+          inputs.find((device) => device.deviceId === selectedDeviceId) ??
+          inputs[0];
+        setSelectedDeviceId(preferredDevice.deviceId);
+        return inputs;
+      }
+
+      setSelectedDeviceId("");
+      setStatus("MIC UNAVAILABLE · NO_MICROPHONES_FOUND");
+      return [];
+    } catch (error) {
+      setAudioDevices([]);
+      setSelectedDeviceId("");
+      setStatus("MIC UNAVAILABLE · DEVICE_PERMISSION_REQUIRED");
+      return [];
+    }
+  }
+
   useEffect(() => {
     testPipeline();
+    loadAudioDevices();
   }, []);
+
+  function stopAudioMeter() {
+    if (meterAnimationRef.current) {
+      cancelAnimationFrame(meterAnimationRef.current);
+      meterAnimationRef.current = null;
+    }
+
+    analyserRef.current = null;
+
+    if (audioContextRef.current) {
+      const context = audioContextRef.current;
+      audioContextRef.current = null;
+      context.close().catch(() => undefined);
+    }
+
+    setInputLevel(0);
+  }
+
+  function startAudioMeter(stream) {
+    if (!stream || typeof window === "undefined") return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    try {
+      const audioContext = new AudioContextClass();
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.8;
+
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+
+      analyserRef.current = analyser;
+      audioContextRef.current = audioContext;
+
+      const buffer = new Uint8Array(analyser.fftSize);
+
+      const updateMeter = () => {
+        if (!analyserRef.current) return;
+
+        analyser.getByteTimeDomainData(buffer);
+
+        let sum = 0;
+        for (let i = 0; i < buffer.length; i += 1) {
+          const normalized = (buffer[i] - 128) / 128;
+          sum += normalized * normalized;
+        }
+
+        const rms = Math.sqrt(sum / buffer.length);
+        const level = Math.min(1, rms * 4.2);
+        setInputLevel(level);
+        meterAnimationRef.current = requestAnimationFrame(updateMeter);
+      };
+
+      meterAnimationRef.current = requestAnimationFrame(updateMeter);
+    } catch (error) {
+      stopAudioMeter();
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (microphoneStreamRef.current) {
+        microphoneStreamRef.current
+          .getTracks()
+          .forEach((track) => track.stop());
+        microphoneStreamRef.current = null;
+      }
+
+      stopAudioMeter();
+    };
+  }, []);
+
+  async function handleMicrophonePermission(
+    deviceIdOverride = selectedDeviceId,
+  ) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setMicrophonePermission("unsupported");
+      setStatus("MIC UNAVAILABLE · AUDIO_NOT_SUPPORTED");
+      return;
+    }
+
+    if (microphoneStreamRef.current) {
+      microphoneStreamRef.current.getTracks().forEach((track) => track.stop());
+      microphoneStreamRef.current = null;
+      stopAudioMeter();
+      setMicrophoneEnabled(false);
+      setMicrophoneMuted(false);
+      setMicrophonePermission("idle");
+      setStatus("MIC READY");
+      return;
+    }
+
+    const effectiveDeviceId = deviceIdOverride || selectedDeviceId;
+    const constraints =
+      effectiveDeviceId &&
+      audioDevices.some((device) => device.deviceId === effectiveDeviceId)
+        ? {
+            audio: {
+              deviceId: { exact: effectiveDeviceId },
+            },
+          }
+        : { audio: true };
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      const refreshedDevices = await navigator.mediaDevices.enumerateDevices();
+      const inputs = refreshedDevices.filter(
+        (device) => device.kind === "audioinput",
+      );
+      setAudioDevices(inputs);
+
+      if (inputs.length === 0) {
+        stream.getTracks().forEach((track) => track.stop());
+        setStatus("MIC UNAVAILABLE · NO_MICROPHONES_FOUND");
+        setErrorMessage(
+          "Geen microfoons gevonden. Controleer of Windows toegang heeft tot een audiotoestel.",
+        );
+        return;
+      }
+
+      const preferred =
+        inputs.find((device) => device.deviceId === effectiveDeviceId) ??
+        inputs[0];
+      setSelectedDeviceId(preferred.deviceId);
+      microphoneStreamRef.current = stream;
+      startAudioMeter(stream);
+      setMicrophoneEnabled(true);
+      setMicrophoneMuted(false);
+      setMicrophonePermission("granted");
+      setStatus(`MIC READY · ${preferred.label || "PERMISSION GRANTED"}`);
+      setErrorMessage(null);
+    } catch (error) {
+      setMicrophoneEnabled(false);
+      setMicrophonePermission("denied");
+      const reason = error && error.name ? error.name : "PERMISSION_DENIED";
+      setStatus(`MIC UNAVAILABLE · ${reason}`);
+      setErrorMessage(
+        "Microfoon toegang geweigerd. Sta audio-toegang toe in Windows privacy-instellingen en probeer opnieuw.",
+      );
+    }
+  }
+
+  async function handleDeviceChange(event) {
+    const nextDeviceId = event.target.value;
+    setSelectedDeviceId(nextDeviceId);
+
+    if (microphoneStreamRef.current) {
+      microphoneStreamRef.current.getTracks().forEach((track) => track.stop());
+      microphoneStreamRef.current = null;
+      stopAudioMeter();
+      setMicrophoneEnabled(false);
+      setMicrophoneMuted(false);
+      setMicrophonePermission("idle");
+    }
+
+    if (nextDeviceId) {
+      setStatus(`MIC READY · ${nextDeviceId}`);
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        await handleMicrophonePermission(nextDeviceId);
+      }
+    }
+  }
+
+  function handleMicrophoneMute() {
+    if (!microphoneStreamRef.current || !microphoneEnabled) return;
+
+    const nextMutedState = !microphoneMuted;
+    microphoneStreamRef.current.getTracks().forEach((track) => {
+      track.enabled = !nextMutedState;
+    });
+
+    setMicrophoneMuted(nextMutedState);
+    setStatus(nextMutedState ? "MIC MUTED" : "MIC READY");
+  }
 
   async function handleSend() {
     const text = draft.trim();
@@ -162,41 +382,154 @@ export default function ChatPlaceholder() {
       </div>
 
       <div className="input-row">
-        <div className="input-shell">
-          <input
-            type="text"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                handleSend();
-              }
-            }}
-            placeholder={sending ? "Versturen..." : "Typ een bericht…"}
-            aria-label="Typ een bericht"
-            disabled={sending || testing}
-          />
+        <div className="mode-switch" aria-label="Input mode switch">
+          <span className="mode-switch-label">
+            {inputMode === "text" ? "TEXT" : "MIC"}
+          </span>
 
           <button
-            className={`send-button ${sending ? "sending" : ""}`}
             type="button"
-            onClick={handleSend}
-            disabled={!draft.trim() || testing || sending}
-            aria-label="Verstuur bericht"
-            title="Verstuur bericht"
+            className={`mode-slider ${inputMode === "mic" ? "mic" : "text"}`}
+            onClick={() =>
+              setInputMode((currentMode) =>
+                currentMode === "text" ? "mic" : "text",
+              )
+            }
+            aria-label={`Schakel naar ${
+              inputMode === "text" ? "microfoon" : "tekst"
+            } modus`}
           >
-            {sending ? (
-              <span className="send-progress" aria-hidden="true" />
-            ) : (
-              <svg className="send-icon" viewBox="0 0 16 16" aria-hidden="true">
-                <path
-                  d="M2.2 12.9 13.2 8 2.2 3.1v3.4L9.4 8l-7.2 1.5v3.4Z"
-                  fill="currentColor"
-                />
-              </svg>
-            )}
+            <span className="mode-slider-knob" />
+            <span className="mode-slider-text mode-slider-text-left">TEXT</span>
+            <span className="mode-slider-text mode-slider-text-right">MIC</span>
           </button>
         </div>
+
+        {inputMode === "text" ? (
+          <div className="input-shell">
+            <input
+              type="text"
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  handleSend();
+                }
+              }}
+              placeholder={sending ? "Versturen..." : "Typ een bericht…"}
+              aria-label="Typ een bericht"
+              disabled={sending || testing}
+            />
+
+            <button
+              className={`send-button ${sending ? "sending" : ""}`}
+              type="button"
+              onClick={handleSend}
+              disabled={!draft.trim() || testing || sending}
+              aria-label="Verstuur bericht"
+              title="Verstuur bericht"
+            >
+              {sending ? (
+                <span className="send-progress" aria-hidden="true" />
+              ) : (
+                <svg
+                  className="send-icon"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M2.2 12.9 13.2 8 2.2 3.1v3.4L9.4 8l-7.2 1.5v3.4Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              )}
+            </button>
+          </div>
+        ) : (
+          <div className="mic-mode-panel">
+            {microphoneEnabled ? (
+              <div className="input-meter" aria-label="Microfoon niveau">
+                <div
+                  className="input-meter-fill"
+                  style={{
+                    width: `${Math.max(6, Math.min(100, inputLevel * 100))}%`,
+                  }}
+                />
+              </div>
+            ) : null}
+
+            <div className="mic-controls">
+              <select
+                className="device-select"
+                value={selectedDeviceId}
+                onChange={handleDeviceChange}
+                aria-label="Kies microfoon apparaat"
+                disabled={testing}
+              >
+                {audioDevices.length === 0 ? (
+                  <option value="">Geen microfoons gevonden</option>
+                ) : (
+                  audioDevices.map((device, index) => (
+                    <option
+                      key={
+                        device.deviceId ||
+                        `${device.label || "microfoon"}-${index}`
+                      }
+                      value={device.deviceId}
+                    >
+                      {device.label || `Microfoon ${index + 1}`}
+                    </option>
+                  ))
+                )}
+              </select>
+
+              <button
+                className={`mic-button ${microphoneEnabled ? "enabled" : ""}`}
+                type="button"
+                onClick={handleMicrophonePermission}
+                disabled={testing}
+                aria-label="Microfoon toegang"
+                title={
+                  microphoneEnabled
+                    ? "Microfoon uitzetten"
+                    : "Microfoon toestemming vragen"
+                }
+              >
+                {testing ? (
+                  <svg
+                    className="mic-icon"
+                    viewBox="0 0 16 16"
+                    aria-hidden="true"
+                  >
+                    <circle cx="8" cy="8" r="2.1" fill="currentColor" />
+                  </svg>
+                ) : (
+                  <svg
+                    className="mic-icon"
+                    viewBox="0 0 16 16"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M8 1.2a2.6 2.6 0 0 1 2.6 2.6v4.2A2.6 2.6 0 1 1 5.4 8V3.8A2.6 2.6 0 0 1 8 1.2Zm0 6.1a1.1 1.1 0 0 0-1.1 1.1v.5c0 .6.5 1.1 1.1 1.1s1.1-.5 1.1-1.1v-.5A1.1 1.1 0 0 0 8 7.3Zm-4.1 1.2h1.2a2.8 2.8 0 0 0 5.8 0h1.2a4.1 4.1 0 0 1-3.6 4.05v1.45h-1.2v-1.45A4.1 4.1 0 0 1 3.9 8.5Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                )}
+              </button>
+
+              <button
+                className={`mute-button ${microphoneMuted ? "muted" : ""}`}
+                type="button"
+                onClick={handleMicrophoneMute}
+                disabled={!microphoneEnabled || testing}
+                aria-label="Microfoon dempen"
+                title={microphoneMuted ? "Microfoon unmute" : "Microfoon mute"}
+              >
+                {microphoneMuted ? "MUTE" : "LIVE"}
+              </button>
+            </div>
+          </div>
+        )}
 
         <button
           className="clear-button"
@@ -207,28 +540,6 @@ export default function ChatPlaceholder() {
           title="Nieuwe conversatie"
         >
           Nieuw
-        </button>
-
-        <button
-          className="mic-button"
-          type="button"
-          onClick={testPipeline}
-          disabled={testing}
-          aria-label="Microphone test button"
-          title="Microphone test button (temporary ping bridge)"
-        >
-          {testing ? (
-            <svg className="mic-icon" viewBox="0 0 16 16" aria-hidden="true">
-              <circle cx="8" cy="8" r="2.1" fill="currentColor" />
-            </svg>
-          ) : (
-            <svg className="mic-icon" viewBox="0 0 16 16" aria-hidden="true">
-              <path
-                d="M8 1.2a2.6 2.6 0 0 1 2.6 2.6v4.2A2.6 2.6 0 1 1 5.4 8V3.8A2.6 2.6 0 0 1 8 1.2Zm0 6.1a1.1 1.1 0 0 0-1.1 1.1v.5c0 .6.5 1.1 1.1 1.1s1.1-.5 1.1-1.1v-.5A1.1 1.1 0 0 0 8 7.3Zm-4.1 1.2h1.2a2.8 2.8 0 0 0 5.8 0h1.2a4.1 4.1 0 0 1-3.6 4.05v1.45h-1.2v-1.45A4.1 4.1 0 0 1 3.9 8.5Z"
-                fill="currentColor"
-              />
-            </svg>
-          )}
         </button>
       </div>
     </div>

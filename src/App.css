@@ -385,6 +385,168 @@ button:not(:disabled),
   align-items: center;
 }
 
+.mode-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: rgba(13, 20, 26, 0.18);
+  border: 1px solid rgba(126, 216, 255, 0.14);
+}
+
+.mode-switch-label {
+  min-width: 38px;
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(220, 236, 250, 0.9);
+}
+
+.mode-switch button.mode-slider {
+  position: relative;
+  width: 122px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(24, 30, 36, 0.9),
+    rgba(15, 20, 26, 0.92)
+  );
+  padding: 0;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02),
+    0 0 14px rgba(113, 166, 255, 0.08);
+  color: rgba(236, 248, 255, 0.98);
+}
+
+.mode-slider-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 54px;
+  height: 24px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(125, 248, 201, 0.35),
+    rgba(82, 201, 180, 0.22)
+  );
+  border: 1px solid rgba(125, 248, 201, 0.34);
+  box-shadow:
+    0 3px 10px rgba(125, 248, 201, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.mode-slider.mic .mode-slider-knob {
+  transform: translateX(60px);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 147, 177, 0.32),
+    rgba(206, 105, 146, 0.2)
+  );
+  border-color: rgba(255, 147, 177, 0.3);
+  box-shadow:
+    0 3px 12px rgba(255, 147, 177, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.mode-slider-text {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(220, 236, 250, 0.8);
+  user-select: none;
+}
+
+.mode-slider-text-left {
+  left: 17px;
+}
+
+.mode-slider-text-right {
+  right: 17px;
+}
+
+.mode-slider.mic .mode-slider-text-left,
+.mode-slider.text .mode-slider-text-right {
+  color: rgba(220, 236, 250, 0.52);
+}
+
+.mode-slider.mic .mode-slider-text-right,
+.mode-slider.text .mode-slider-text-left {
+  color: rgba(236, 248, 255, 0.98);
+}
+
+.mic-mode-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mic-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.input-meter {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(126, 216, 255, 0.08);
+  border: 1px solid rgba(126, 216, 255, 0.16);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(126, 216, 255, 0.04);
+}
+
+.input-meter-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    rgba(125, 248, 201, 0.8),
+    rgba(149, 214, 255, 0.95),
+    rgba(255, 147, 177, 0.95)
+  );
+  box-shadow: 0 0 12px rgba(125, 248, 201, 0.28);
+  transition: width 0.06s linear;
+}
+
+.device-select {
+  min-width: 120px;
+  max-width: 180px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(126, 216, 255, 0.18);
+  background: rgba(13, 20, 26, 0.18);
+  color: var(--text);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  padding: 0 10px;
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(126, 216, 255, 0.04);
+}
+
+.device-select option {
+  background: rgba(10, 15, 18, 0.96);
+  color: var(--text);
+}
+
 .input-shell {
   flex: 1;
   display: flex;
@@ -519,6 +681,41 @@ button:not(:disabled),
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     0 0 10px rgba(105, 210, 255, 0.08);
+}
+
+.input-row button.mic-button.enabled {
+  background: linear-gradient(
+    180deg,
+    rgba(125, 248, 201, 0.24),
+    rgba(71, 186, 167, 0.2)
+  );
+  border-color: rgba(125, 248, 201, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 18px rgba(125, 248, 201, 0.18);
+}
+
+.input-row button.mute-button {
+  min-width: 52px;
+  height: 30px;
+  padding: 0 10px;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-radius: 999px;
+}
+
+.input-row button.mute-button.muted {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 147, 177, 0.22),
+    rgba(203, 92, 127, 0.2)
+  );
+  border-color: rgba(255, 147, 177, 0.4);
+  color: rgba(255, 226, 236, 0.98);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 12px rgba(255, 147, 177, 0.12);
 }
 
 .mic-icon {
