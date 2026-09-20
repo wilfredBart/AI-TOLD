@@ -496,6 +496,19 @@ button:not(:disabled),
   min-width: 0;
 }
 
+.mic-transcript-preview {
+  min-height: 28px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(126, 216, 255, 0.06);
+  border: 1px solid rgba(126, 216, 255, 0.16);
+  color: rgba(236, 248, 255, 0.96);
+  font-size: 10px;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  word-break: break-word;
+}
+
 .mic-controls {
   display: flex;
   align-items: center;

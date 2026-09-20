@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { extractFinalTranscript } from "../../lib/speech.js";
+import {
+  extractFinalTranscript,
+  shouldKeepMicModeOnSpeechStart,
+} from "../../lib/speech.js";
 
 const createWelcomeMessages = () => [
   { id: 1, sender: "ai", text: "Lokaal kanaal open." },
@@ -19,6 +22,7 @@ export default function ChatPlaceholder() {
   const [audioDevices, setAudioDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
   const [inputMode, setInputMode] = useState("text");
+  const [liveTranscript, setLiveTranscript] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [inputLevel, setInputLevel] = useState(0);
   const messagesEndRef = useRef(null);
@@ -135,6 +139,12 @@ export default function ChatPlaceholder() {
     recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
+      setInputMode((currentMode) =>
+        shouldKeepMicModeOnSpeechStart(currentMode, microphoneEnabled),
+      );
+      setDraft((currentDraft) =>
+        currentDraft.trim() ? currentDraft : "Microfoon actief - luister nu...",
+      );
       setIsListening(true);
       setStatus("LISTENING...");
     };
@@ -148,12 +158,32 @@ export default function ChatPlaceholder() {
       setDraft((currentDraft) =>
         currentDraft ? `${currentDraft} ${transcript}` : transcript,
       );
-      setInputMode("text");
-      setStatus(`TRANSCRIPT READY · ${transcript}`);
+      setLiveTranscript(transcript);
+      setInputMode((currentMode) =>
+        shouldKeepMicModeOnSpeechStart(currentMode, true),
+      );
+      setStatus(`MIC READY · ${transcript}`);
     };
 
     recognition.onerror = (event) => {
       const errorCode = event.error || "SPEECH_RECOGNITION_ERROR";
+
+      if (errorCode === "network") {
+        setInputMode((currentMode) =>
+          shouldKeepMicModeOnSpeechStart(currentMode, microphoneEnabled),
+        );
+        const fallbackText =
+          "Default microfoon actief - wacht op transcript...";
+        setDraft((currentDraft) =>
+          currentDraft.trim() ? currentDraft : fallbackText,
+        );
+        setLiveTranscript(fallbackText);
+        setErrorMessage(null);
+        setStatus("MIC READY · speech unavailable");
+        setIsListening(false);
+        return;
+      }
+
       const message =
         errorCode === "not-allowed"
           ? "Spraakherkenning is geblokkeerd. Geef deze app toegang tot de microfoon."
@@ -309,17 +339,16 @@ export default function ChatPlaceholder() {
       const preferred =
         inputs.find((device) => device.deviceId === effectiveDeviceId) ??
         inputs[0];
-      setSelectedDeviceId(preferred.deviceId);
+      setSelectedDeviceId(preferred?.deviceId ?? "default");
       microphoneStreamRef.current = stream;
       startAudioMeter(stream);
       setMicrophoneEnabled(true);
+      setInputMode("mic");
       setMicrophoneMuted(false);
       setMicrophonePermission("granted");
       setErrorMessage(null);
       startSpeechRecognition();
-      setStatus(
-        `MIC READY · ${preferred.label || "PERMISSION GRANTED"}`,
-      );
+      setStatus(`MIC READY · ${preferred.label || "PERMISSION GRANTED"}`);
     } catch (error) {
       setMicrophoneEnabled(false);
       setMicrophonePermission("denied");
@@ -503,6 +532,10 @@ export default function ChatPlaceholder() {
                   startSpeechRecognition();
                 }
 
+                if (nextMode === "mic" && !microphoneEnabled) {
+                  handleMicrophonePermission();
+                }
+
                 return nextMode;
               })
             }
@@ -559,14 +592,21 @@ export default function ChatPlaceholder() {
         ) : (
           <div className="mic-mode-panel">
             {microphoneEnabled ? (
-              <div className="input-meter" aria-label="Microfoon niveau">
-                <div
-                  className="input-meter-fill"
-                  style={{
-                    width: `${Math.max(6, Math.min(100, inputLevel * 100))}%`,
-                  }}
-                />
-              </div>
+              <>
+                <div className="input-meter" aria-label="Microfoon niveau">
+                  <div
+                    className="input-meter-fill"
+                    style={{
+                      width: `${Math.max(6, Math.min(100, inputLevel * 100))}%`,
+                    }}
+                  />
+                </div>
+
+                <div className="mic-transcript-preview" aria-live="polite">
+                  {liveTranscript ||
+                    "Microfoon actief - wacht op transcript..."}
+                </div>
+              </>
             ) : null}
 
             <div className="mic-controls">
