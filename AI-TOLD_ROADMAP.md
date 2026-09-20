@@ -457,6 +457,8 @@ Deze punten kunnen later veranderen, maar worden niet als basis van de eerste ve
 | 2026-09-20 | 0.2  | Wilfred + AI | Roadmapstructuur afgestemd op de werkwijze van `rack-docu-app`: één fase/punt tegelijk, testen door Wilfred, roadmap bijwerken na bevestiging.                                                        |
 | 2026-09-20 | 0.10 | Wilfred + AI | Frontend ↔ Tauri ↔ AI-pipeline contract gedefinieerd: frontend invokes Tauri commands; Tauri bridges to local Python HTTP service on 127.0.0.1:8765; capability permissions are part of the contract. |
 | 2026-09-20 | 0.11 | Wilfred + AI | Shared message envelope implemented across frontend, Tauri and AI-pipeline; /ping now returns a structured JSON object with type, requestId, source, target, payload and timestamp.                   |
+| 2026-09-20 | 0.12 | Wilfred + AI | Backend unavailable handling added: Tauri now returns a structured `type: "error"` envelope with a `payload.code` such as `AI_PIPELINE_UNAVAILABLE`, and the frontend renders the fallback state instead of raw exception strings. |
+| 2026-09-20 | push | Wilfred + AI | Roadmap and protocol updates committed and pushed to origin/main after local validation with `cargo check` and `npm run build`.                                                                             |
 
 ---
 
