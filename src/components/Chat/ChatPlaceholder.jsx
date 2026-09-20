@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 export default function ChatPlaceholder() {
   const [status, setStatus] = useState("MIC READY");
   const [testing, setTesting] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
   const [draft, setDraft] = useState("");
+  const messagesEndRef = useRef(null);
   const [messages, setMessages] = useState([
     { id: 1, sender: "ai", text: "Lokaal kanaal open." },
     { id: 2, sender: "ai", text: "MIC READY" },
@@ -21,13 +24,37 @@ export default function ChatPlaceholder() {
     ]);
   }
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   function handleSend() {
     const text = draft.trim();
-    if (!text || testing) return;
+    if (!text || testing || sending) return;
 
+    setSending(true);
+    setErrorMessage(null);
+    setStatus("SENDING...");
     addMessage("user", text);
-    setStatus(`USER · ${text}`);
     setDraft("");
+
+    window.setTimeout(() => {
+      const shouldFail = /error|fail|mislukt|unavailable/i.test(text);
+
+      if (shouldFail) {
+        const fallbackMessage =
+          "Verzending mislukt. Controleer de lokale pipeline.";
+        setErrorMessage(fallbackMessage);
+        setStatus("MIC UNAVAILABLE · AI_PIPELINE_UNAVAILABLE");
+        addMessage("ai", fallbackMessage);
+        setSending(false);
+        return;
+      }
+
+      addMessage("ai", "Local channel open. Awaiting AI response.");
+      setStatus("MIC READY");
+      setSending(false);
+    }, 700);
   }
 
   async function testPipeline() {
@@ -61,15 +88,28 @@ export default function ChatPlaceholder() {
 
   return (
     <div className="chat-placeholder">
+      {errorMessage ? (
+        <div className="error-banner" role="alert">
+          {errorMessage}
+        </div>
+      ) : null}
+
       <div className="messages">
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`msg ${message.sender === "user" ? "user" : "ai"}`}
+            className={`msg ${
+              message.sender === "user"
+                ? "user"
+                : message.text === errorMessage
+                  ? "error"
+                  : "ai"
+            }`}
           >
             {message.text}
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
       <div className="input-row">
@@ -83,24 +123,29 @@ export default function ChatPlaceholder() {
                 handleSend();
               }
             }}
-            placeholder="Typ een bericht…"
+            placeholder={sending ? "Versturen..." : "Typ een bericht…"}
             aria-label="Typ een bericht"
+            disabled={sending || testing}
           />
 
           <button
-            className="send-button"
+            className={`send-button ${sending ? "sending" : ""}`}
             type="button"
             onClick={handleSend}
-            disabled={!draft.trim() || testing}
+            disabled={!draft.trim() || testing || sending}
             aria-label="Verstuur bericht"
             title="Verstuur bericht"
           >
-            <svg className="send-icon" viewBox="0 0 16 16" aria-hidden="true">
-              <path
-                d="M2.2 12.9 13.2 8 2.2 3.1v3.4L9.4 8l-7.2 1.5v3.4Z"
-                fill="currentColor"
-              />
-            </svg>
+            {sending ? (
+              <span className="send-progress" aria-hidden="true" />
+            ) : (
+              <svg className="send-icon" viewBox="0 0 16 16" aria-hidden="true">
+                <path
+                  d="M2.2 12.9 13.2 8 2.2 3.1v3.4L9.4 8l-7.2 1.5v3.4Z"
+                  fill="currentColor"
+                />
+              </svg>
+            )}
           </button>
         </div>
 
