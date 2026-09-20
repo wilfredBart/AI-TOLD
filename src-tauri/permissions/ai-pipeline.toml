@@ -1,0 +1,6 @@
+"$schema" = "../gen/schemas/schema.json"
+
+[[permission]]
+identifier = "allow-ping"
+description = "Allows the frontend to call the AI pipeline ping command."
+commands.allow = ["ai_pipeline_ping"]

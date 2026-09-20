@@ -30,6 +30,7 @@
     "core:window:allow-is-maximized",
     "window-control",
     "global-shortcut:default",
-    "opener:default"
+    "opener:default",
+    "allow-ping"
   ]
 }

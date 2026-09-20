@@ -35,7 +35,7 @@ The intended visual language is therefore **transparent OLED-inspired, luminous,
 
 The visual target is a **transparent intelligent OLED display** with a controlled optical focus: the world behind it remains visible, while AI-TOLD itself is the sharp, luminous layer the user interacts with.
 
-* * *
+---
 
 ## Fase 0 — Existing Desktop Foundation
 
@@ -66,15 +66,14 @@ The project already contains the main desktop building blocks:
 - [x] 0.9 Re-verify the complete desktop foundation against the current repository
 
   Controleer één voor één:
-
   - [x] App start correct
   - [x] Frameless window werkt
   - [x] Minimize werkt (trayicon blijft active)
   - [x] Maximize / restore werkt (trayicon blijft active)
   - [x] Close werkt (trayicon blijft active)
-  - [x] System tray werkt (show + exit  = gecontrolleerd in windows taskmanager of hij daar afgesloten is )
-  - [x] Hide / restore via tray werkt (show + exit  = gecontrolleerd in windows taskmanager of hij daar afgesloten is )
-  - [x] Quit via tray werkt (show + exit  = gecontrolleerd in windows taskmanager of hij daar afgesloten is )
+  - [x] System tray werkt (show + exit = gecontrolleerd in windows taskmanager of hij daar afgesloten is )
+  - [x] Hide / restore via tray werkt (show + exit = gecontrolleerd in windows taskmanager of hij daar afgesloten is )
+  - [x] Quit via tray werkt (show + exit = gecontrolleerd in windows taskmanager of hij daar afgesloten is )
   - [x] Pin / always-on-top werkt
   - [x] Dock / floating behaviour werkt
   - [x] Window resizing werkt
@@ -85,7 +84,6 @@ The project already contains the main desktop building blocks:
   - [x] `ai-pipeline` bestaat en de huidige status is vastgesteld
 
   Nog niet controleren/bouwen:
-
   - STT / microfoon → Fase 4
   - TTS → Fase 5
   - VRM/avatar → Fase 6
@@ -93,10 +91,42 @@ The project already contains the main desktop building blocks:
   - AI actions → Fase 8
   - AI-created windows → Fase 9
   - Memory → Fase 10
-  
-- [ ] 0.10 Define frontend ↔ Tauri ↔ AI-pipeline communication
-- [ ] 0.11 Define one consistent message format between components
-- [ ] 0.12 Add basic error handling for unavailable AI-pipeline
+
+- [x] 0.10 Define frontend ↔ Tauri ↔ AI-pipeline communication
+
+  Contract defined for the current app architecture:
+  - Frontend code calls Tauri commands through `@tauri-apps/api/core` and `invoke(...)`.
+  - Tauri exposes the command with `#[tauri::command]` and registers it through `tauri::generate_handler!`.
+  - The Rust side acts as the bridge to the local AI pipeline service and performs HTTP requests to `http://127.0.0.1:8765`.
+  - The AI-pipeline is a separate local Python service that exposes endpoints such as `/ping`.
+  - The frontend never calls the Python server directly; it calls Tauri, and Tauri calls the local AI service.
+  - Permissions/capabilities are explicit and must allow the custom Tauri command to be invoked from the frontend.
+  - Error states must be surfaced from Tauri back to the UI, with a clear frontend fallback when the AI pipeline is unavailable.
+
+- [x] 0.11 Define one consistent message format between components
+
+  Message format contract for the current app architecture:
+  - All communication should use a single JSON object shape for requests and responses across the UI, Tauri and AI-pipeline layers.
+  - Required top-level fields: `type`, `requestId`, `source`, `target`, `payload`, `timestamp`.
+  - `type` identifies the purpose of the message, for example `ping`, `pong`, `chat_request`, `chat_response`, `error`.
+  - `requestId` is a unique ID used to correlate each request/response pair and to support retries and logging.
+  - `source` identifies the sender (`frontend`, `tauri`, `ai-pipeline`).
+  - `target` identifies the intended receiver (`tauri`, `ai-pipeline`, `frontend`).
+  - `payload` contains the message-specific data and should remain structured, not ad hoc.
+  - `timestamp` must be included so logs and debugging are traceable.
+  - The frontend must not send raw Python-specific payloads directly to the backend; it must send a Tauri-call payload that Tauri translates into the appropriate AI-pipeline request.
+  - Successful AI-pipeline replies should follow a consistent positive result format, for example `{ "type": "pong", "source": "ai-pipeline", "target": "tauri", "payload": { ... }, "requestId": "..." }`.
+  - Errors should use a single format, for example `{ "type": "error", "source": "ai-pipeline", "target": "frontend", "payload": { "code": "AI_PIPELINE_UNAVAILABLE", "message": "..." }, "requestId": "..." }`.
+  - The UI layer should render based on a shared message contract, not on separate ad hoc response shapes per component.
+
+- [x] 0.12 Add basic error handling for unavailable AI-pipeline
+
+  Error handling contract for the current app architecture:
+  - The Tauri command returns a structured JSON envelope even when the local AI-pipeline is unavailable.
+  - Unavailable backend errors are represented with a `type: "error"` message and a `payload.code` such as `AI_PIPELINE_UNAVAILABLE`.
+  - The frontend checks the message envelope rather than relying on raw exception strings.
+  - The UI shows a clear fallback status such as `PIPELINE UNAVAILABLE · AI_PIPELINE_UNAVAILABLE · ...` when the service is not reachable.
+
 - [ ] 0.13 Establish project conventions
   - no TypeScript unless explicitly decided later
   - components remain small and focused
@@ -104,7 +134,7 @@ The project already contains the main desktop building blocks:
 
 Fase 0 klaar als: the existing desktop foundation is verified against the current codebase and the three main parts — UI, Tauri and AI-pipeline — have a clear separation.
 
-* * *
+---
 
 ## Fase 1 — Application Interface
 
@@ -144,7 +174,7 @@ Goal: turn the existing desktop shell into the actual AI-TOLD interface.
 
 Fase 1 klaar als: AI-TOLD has a stable main interface that can host the conversation, avatar, voice controls and status information.
 
-* * *
+---
 
 ## Fase 2 — Chat
 
@@ -168,7 +198,7 @@ Goal: build reliable text conversation before adding voice or autonomous actions
 
 Fase 2 klaar als: a user can enter text, the local AI can respond, and the complete conversation reliably appears in the AI-TOLD interface.
 
-* * *
+---
 
 ## Fase 3 — Local AI Pipeline
 
@@ -193,7 +223,7 @@ Goal: make the AI backend a proper local service instead of a test endpoint.
 
 Fase 3 klaar als: AI-TOLD can communicate with the local AI stack without the frontend needing to know which model technology is being used.
 
-* * *
+---
 
 ## Fase 4 — Microphone Input
 
@@ -214,7 +244,7 @@ Important: voice input should feed the same message pipeline as typed input wher
 
 Fase 4 klaar als: speaking and typing use the same AI conversation flow.
 
-* * *
+---
 
 ## Fase 5 — Text-to-Speech
 
@@ -233,7 +263,7 @@ Goal: let AI-TOLD speak its responses naturally.
 
 Fase 5 klaar als: AI-TOLD can naturally speak a complete AI response and the user can stop the speech.
 
-* * *
+---
 
 ## Fase 6 — Avatar
 
@@ -254,7 +284,7 @@ Goal: make the AI-TOLD avatar a reliable part of the application instead of a pl
 
 Fase 6 klaar als: the selected VRM model loads reliably and provides a stable AI-TOLD avatar with basic idle behaviour.
 
-* * *
+---
 
 ## Fase 7 — Lipsync
 
@@ -278,7 +308,7 @@ Possible technologies can be evaluated when this phase is reached:
 
 Fase 7 klaar als: the avatar visibly speaks in sync with AI-TOLD's generated audio.
 
-* * *
+---
 
 ## Fase 8 — AI Action Layer
 
@@ -302,7 +332,7 @@ The AI should not directly manipulate the UI. It should request an action, the a
 
 Fase 8 klaar als: the AI can safely request application actions through a defined and validated action protocol.
 
-* * *
+---
 
 ## Fase 9 — AI-Created Windows
 
@@ -336,7 +366,7 @@ The exact window types are deliberately not fixed yet.
 
 Fase 9 klaar als: AI-TOLD can open and manage multiple controlled application windows without the AI generating arbitrary frontend code.
 
-* * *
+---
 
 ## Fase 10 — Context & Memory
 
@@ -356,7 +386,7 @@ Goal: make conversations useful beyond a single request while keeping control ov
 
 Fase 10 klaar als: AI-TOLD can locally save and reload conversations without allowing context to become unmanageable.
 
-* * *
+---
 
 ## Fase 11 — System Integration
 
@@ -377,7 +407,7 @@ The action system should remain explicit and testable. The AI decides what it wa
 
 Fase 11 klaar als: AI-TOLD can perform useful desktop actions through a controlled capability system rather than unrestricted automation.
 
-* * *
+---
 
 ## Fase 12 — Stability & Release
 
@@ -400,7 +430,7 @@ Goal: turn the working prototype into a dependable desktop application.
 
 Fase 12 klaar als: AI-TOLD can be installed and started on a clean Windows machine without development tooling.
 
-* * *
+---
 
 ## Niet in de roadmap
 
@@ -416,17 +446,19 @@ Om te voorkomen dat AI-TOLD te vroeg een enorm project wordt:
 
 Deze punten kunnen later veranderen, maar worden niet als basis van de eerste versies gebouwd.
 
-* * *
+---
 
 ## Log
 
-| Datum | Stap | Wie | Notitie |
-|---|---|---|---|
-| 2026-09-20 | plan | Wilfred + AI | Roadmap herwerkt op basis van de bestaande AI-TOLD/Grok projectgeschiedenis en de huidige desktop-foundation. |
-| 2026-09-20 | 0.1 | Wilfred + AI | Bestaande Tauri/React/JavaScript desktop-shell als uitgangspunt vastgelegd in plaats van opnieuw als fundament te plannen. |
-| 2026-09-20 | 0.2 | Wilfred + AI | Roadmapstructuur afgestemd op de werkwijze van `rack-docu-app`: één fase/punt tegelijk, testen door Wilfred, roadmap bijwerken na bevestiging. |
+| Datum      | Stap | Wie          | Notitie                                                                                                                                                                                               |
+| ---------- | ---- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-20 | plan | Wilfred + AI | Roadmap herwerkt op basis van de bestaande AI-TOLD/Grok projectgeschiedenis en de huidige desktop-foundation.                                                                                         |
+| 2026-09-20 | 0.1  | Wilfred + AI | Bestaande Tauri/React/JavaScript desktop-shell als uitgangspunt vastgelegd in plaats van opnieuw als fundament te plannen.                                                                            |
+| 2026-09-20 | 0.2  | Wilfred + AI | Roadmapstructuur afgestemd op de werkwijze van `rack-docu-app`: één fase/punt tegelijk, testen door Wilfred, roadmap bijwerken na bevestiging.                                                        |
+| 2026-09-20 | 0.10 | Wilfred + AI | Frontend ↔ Tauri ↔ AI-pipeline contract gedefinieerd: frontend invokes Tauri commands; Tauri bridges to local Python HTTP service on 127.0.0.1:8765; capability permissions are part of the contract. |
+| 2026-09-20 | 0.11 | Wilfred + AI | Shared message envelope implemented across frontend, Tauri and AI-pipeline; /ping now returns a structured JSON object with type, requestId, source, target, payload and timestamp.                   |
 
-* * *
+---
 
 ## Hoe bijwerken
 
