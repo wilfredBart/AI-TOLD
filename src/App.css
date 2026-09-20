@@ -1,15 +1,15 @@
 :root {
-  --bg: rgba(255, 255, 255, 0.02);
-  --glass: rgba(255, 255, 255, 0.03);
-  --panel: rgba(255, 255, 255, 0.015);
-  --border: rgba(255, 255, 255, 0.12);
-  --text: rgba(255, 255, 255, 0.9);
-  --muted: rgba(255, 255, 255, 0.7);
-  --accent: rgba(255, 255, 255, 0.92);
-  --accent-strong: rgba(255, 255, 255, 0.88);
-  --danger: rgba(255, 255, 255, 0.8);
-  --led: rgba(255, 255, 255, 0.9);
-  --shadow: rgba(0, 0, 0, 0.06);
+  --bg: rgba(8, 14, 20, 0.18);
+  --glass: rgba(18, 28, 36, 0.15);
+  --panel: rgba(12, 18, 24, 0.12);
+  --border: rgba(137, 203, 255, 0.26);
+  --text: #edf8ff;
+  --muted: #c7d8ea;
+  --accent: #a7dcff;
+  --accent-strong: #7fcfff;
+  --danger: #ff7b95;
+  --led: #7df8c9;
+  --shadow: rgba(8, 16, 26, 0.2);
 }
 
 * {
@@ -42,22 +42,22 @@ button:not(:disabled),
   display: flex;
   flex-direction: column;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.005)),
+    linear-gradient(180deg, rgba(14, 20, 28, 0.2), rgba(8, 13, 20, 0.08)),
     radial-gradient(
-      1400px 520px at 50% -10%,
-      rgba(255, 255, 255, 0.03),
-      transparent 38%
+      1400px 500px at 50% -10%,
+      rgba(130, 202, 255, 0.12),
+      transparent 42%
     ),
-    rgba(255, 255, 255, 0.01);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+    rgba(10, 16, 22, 0.08);
+  border: 1px solid rgba(146, 209, 255, 0.18);
   border-radius: 0;
   overflow: hidden;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    inset 0 0 12px rgba(255, 255, 255, 0.02),
-    0 8px 24px rgba(0, 0, 0, 0.03);
-  backdrop-filter: blur(18px) saturate(0.8) brightness(1.1);
-  -webkit-backdrop-filter: blur(18px) saturate(0.8) brightness(1.1);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 22px rgba(126, 216, 255, 0.07),
+    0 12px 28px rgba(2, 9, 18, 0.12);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
 }
 
 .app-shell.is-docked {
@@ -86,13 +86,13 @@ button:not(:disabled),
   justify-content: space-between;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.02),
-    rgba(255, 255, 255, 0.005)
+    rgba(18, 29, 37, 0.32),
+    rgba(8, 15, 21, 0.08)
   );
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(127, 214, 255, 0.08);
   flex-shrink: 0;
   z-index: 12;
-  box-shadow: none;
+  box-shadow: inset 0 -1px 0 rgba(127, 214, 255, 0.04);
 }
 
 .titlebar-drag {
@@ -108,8 +108,10 @@ button:not(:disabled),
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  background: var(--accent);
+  box-shadow:
+    0 0 12px var(--accent),
+    0 0 24px rgba(126, 216, 255, 0.7);
 }
 
 .titlebar-title {
@@ -162,15 +164,19 @@ button:not(:disabled),
 }
 
 .icon-btn:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(126, 216, 255, 0.08);
   color: var(--text);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 0 0 1px rgba(126, 216, 255, 0.2),
+    0 0 18px rgba(126, 216, 255, 0.12);
 }
 
 .icon-btn.active {
   color: var(--accent);
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  background: rgba(121, 184, 255, 0.12);
+  box-shadow:
+    inset 0 0 18px rgba(126, 216, 255, 0.14),
+    0 0 18px rgba(126, 216, 255, 0.14);
 }
 
 .icon-btn.danger:hover {
@@ -239,8 +245,12 @@ button:not(:disabled),
   width: 180px;
   height: 180px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.1));
+  border: 1px solid var(--border);
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(27, 50, 74, 0.8),
+    rgba(5, 7, 12, 0.9)
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -262,17 +272,17 @@ button:not(:disabled),
 .chat-section {
   height: 34%;
   min-height: 168px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(137, 203, 255, 0.14);
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.02),
-    rgba(255, 255, 255, 0.01)
+    rgba(12, 18, 24, 0.18),
+    rgba(8, 13, 20, 0.12)
   );
   border-radius: 18px 18px 0 0;
   display: flex;
   flex-direction: column;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .chat-placeholder {
@@ -302,9 +312,11 @@ button:not(:disabled),
 
 .msg.ai {
   align-self: flex-start;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: none;
+  background: rgba(126, 216, 255, 0.07);
+  border: 1px solid rgba(126, 216, 255, 0.18);
+  box-shadow:
+    inset 0 0 18px rgba(126, 216, 255, 0.04),
+    0 0 14px rgba(126, 216, 255, 0.04);
 }
 
 .input-row {
@@ -314,14 +326,16 @@ button:not(:disabled),
 
 .input-row input {
   flex: 1;
-  background: rgba(255, 255, 255, 0.015);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 18, 24, 0.18);
+  border: 1px solid rgba(126, 216, 255, 0.14);
   border-radius: 12px;
   padding: 10px 14px;
   color: var(--text);
   font-size: 13px;
   outline: none;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.01);
+  box-shadow:
+    inset 0 0 0 1px rgba(126, 216, 255, 0.03),
+    0 0 12px rgba(126, 216, 255, 0.02);
 }
 
 .input-row input:disabled,
@@ -333,15 +347,45 @@ button:not(:disabled),
 .input-row button {
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.08),
-    rgba(255, 255, 255, 0.02)
+    rgba(150, 220, 255, 0.22),
+    rgba(98, 180, 255, 0.14)
   );
-  color: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(236, 248, 255, 0.96);
+  border: 1px solid rgba(126, 216, 255, 0.2);
   border-radius: 12px;
   padding: 0 16px;
   font-weight: 650;
-  box-shadow: none;
+  box-shadow:
+    0 0 16px rgba(105, 210, 255, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.input-row button.mic-button {
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  letter-spacing: 0;
+  font-size: 18px;
+  line-height: 1;
+  text-transform: none;
+}
+
+.mic-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.mic-symbol {
+  display: inline-block;
+  transform: translateY(-1px);
+  opacity: 0.9;
+  font-size: 18px;
 }
 
 .status-bar {
@@ -352,9 +396,9 @@ button:not(:disabled),
   padding: 0 12px;
   font-size: 10px;
   letter-spacing: 0.12em;
-  color: rgba(217, 233, 247, 0.8);
-  border-top: 1px solid rgba(127, 214, 255, 0.08);
-  background: rgba(4, 8, 12, 0.14);
+  color: rgba(220, 236, 250, 0.84);
+  border-top: 1px solid rgba(127, 214, 255, 0.1);
+  background: rgba(4, 8, 12, 0.12);
   z-index: 12;
 }
 
