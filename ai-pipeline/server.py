@@ -46,6 +46,43 @@ class AIHandler(BaseHTTPRequestHandler):
         self.send_response(404)
         self.end_headers()
 
+    def do_POST(self):
+        if self.path != "/chat":
+            self.send_response(404)
+            self.end_headers()
+            return
+
+        content_length = int(self.headers.get("Content-Length", "0"))
+        raw_body = self.rfile.read(content_length) if content_length > 0 else b"{}"
+
+        try:
+            payload = json.loads(raw_body.decode("utf-8")) if raw_body else {}
+        except json.JSONDecodeError:
+            payload = {}
+
+        message = payload.get("message", "") if isinstance(payload, dict) else ""
+
+        response = make_message(
+            "chat_response",
+            "ai-pipeline",
+            "frontend",
+            {
+                "endpoint": "/chat",
+                "status": "ok",
+                "service": "ai-pipeline",
+                "userMessage": message,
+                "response": f"AI-pipeline echo: {message or 'hello'}",
+            },
+        )
+
+        body = json.dumps(response).encode("utf-8")
+
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def log_message(self, format, *args):
         print(f"[AI-PIPELINE] {format % args}")
 

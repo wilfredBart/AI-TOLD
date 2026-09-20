@@ -28,7 +28,7 @@ export default function ChatPlaceholder() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  function handleSend() {
+  async function handleSend() {
     const text = draft.trim();
     if (!text || testing || sending) return;
 
@@ -38,23 +38,38 @@ export default function ChatPlaceholder() {
     addMessage("user", text);
     setDraft("");
 
-    window.setTimeout(() => {
-      const shouldFail = /error|fail|mislukt|unavailable/i.test(text);
+    try {
+      const response = await invoke("ai_pipeline_chat", { message: text });
+      const messageType = response?.type ?? response?.payload?.type;
+      const payload = response?.payload ?? response;
 
-      if (shouldFail) {
-        const fallbackMessage =
+      if (messageType === "error") {
+        const errorCode = payload?.code ?? "AI_PIPELINE_ERROR";
+        const errorMessageText =
+          payload?.message ??
           "Verzending mislukt. Controleer de lokale pipeline.";
-        setErrorMessage(fallbackMessage);
-        setStatus("MIC UNAVAILABLE · AI_PIPELINE_UNAVAILABLE");
-        addMessage("ai", fallbackMessage);
-        setSending(false);
+
+        setErrorMessage(errorMessageText);
+        setStatus(`MIC UNAVAILABLE · ${errorCode}`);
+        addMessage("ai", errorMessageText);
         return;
       }
 
-      addMessage("ai", "Local channel open. Awaiting AI response.");
-      setStatus("MIC READY");
+      const aiReply =
+        payload?.response ??
+        payload?.message ??
+        "Local channel open. Awaiting AI response.";
+
+      addMessage("ai", aiReply);
+      setStatus(`MIC READY · ${payload?.service ?? "ai-pipeline"}`);
+    } catch (error) {
+      const fallbackMessage = `Verzending mislukt. ${String(error)}`;
+      setErrorMessage(fallbackMessage);
+      setStatus("MIC UNAVAILABLE · AI_PIPELINE_UNAVAILABLE");
+      addMessage("ai", fallbackMessage);
+    } finally {
       setSending(false);
-    }, 700);
+    }
   }
 
   async function testPipeline() {

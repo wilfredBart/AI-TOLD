@@ -155,6 +155,47 @@ async fn ai_pipeline_ping() -> Result<serde_json::Value, String> {
         .map_err(|e| format!("Kan response niet serialiseren: {e}"))
 }
 
+#[tauri::command]
+async fn ai_pipeline_chat(message: String) -> Result<serde_json::Value, String> {
+    let client = reqwest::Client::new();
+    let response = match client
+        .post("http://127.0.0.1:8765/chat")
+        .json(&serde_json::json!({ "message": message }))
+        .send()
+        .await
+    {
+        Ok(res) => res,
+        Err(e) => {
+            return Ok(serde_json::to_value(PipelineEnvelope::error(
+                "AI_PIPELINE_UNAVAILABLE",
+                format!("AI pipeline niet bereikbaar: {e}"),
+            ))
+            .map_err(|err| format!("Kan error response serialiseren: {err}"))?);
+        }
+    };
+
+    if !response.status().is_success() {
+        return Ok(serde_json::to_value(PipelineEnvelope::error(
+            "AI_PIPELINE_HTTP_ERROR",
+            format!("AI pipeline gaf HTTP status {}", response.status()),
+        ))
+        .map_err(|err| format!("Kan error response serialiseren: {err}"))?);
+    }
+
+    let ai_payload = match response.json::<serde_json::Value>().await {
+        Ok(payload) => payload,
+        Err(e) => {
+            return Ok(serde_json::to_value(PipelineEnvelope::error(
+                "AI_PIPELINE_INVALID_RESPONSE",
+                format!("Ongeldige response van AI pipeline: {e}"),
+            ))
+            .map_err(|err| format!("Kan error response serialiseren: {err}"))?);
+        }
+    };
+
+    Ok(ai_payload)
+}
+
 fn toggle_main_window(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         match window.is_visible() {
@@ -182,6 +223,7 @@ pub fn run() {
             window_dock,
             window_undock,
             ai_pipeline_ping,
+            ai_pipeline_chat,
         ])
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
