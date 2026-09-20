@@ -257,19 +257,20 @@ Goal: allow the user to speak to AI-TOLD.
 - [x] 4.3b Text ↔ mic mode switch in the input row
 - [x] 4.3c Live microphone input level meter
 - [x] 4.3d Mic mute / live toggle while the stream is active
-- [ ] 4.4 Stop/cancel recording
-- [ ] 4.5 Speech-to-text pipeline
-- [ ] 4.6 Put recognized text into the chat input
-- [ ] 4.7 Send recognized text through the same chat pipeline
-- [ ] 4.8 Handle microphone/STT errors cleanly
+- [x] 4.4 Stop/cancel recording
+- [x] 4.5 Speech-to-text pipeline
+- [x] 4.6 Put recognized text into the chat input
+- [x] 4.7 Send recognized text through the same chat pipeline
+- [x] 4.8 Handle microphone/STT errors cleanly
 
 Current repo status:
 
-- The app now supports a single input-mode switch to select either text or microphone input.
+- The app supports a single input-mode switch to select either text or microphone input.
 - Device selection works through the browser media API and the app exposes the currently selected microphone device in the UI.
 - A live input meter is visible while the microphone is active.
 - Mute/live toggling is available without destroying the stream.
-- The remaining missing work is the actual STT layer: capture audio, transcribe speech, inject the transcript into the conversation flow and send it through the existing AI pipeline.
+- Browser speech recognition is active for the selected microphone, and final transcript text is inserted into the same draft/input flow used by typed messages.
+- Recognized text can be sent through the existing local AI pipeline without creating a second conversation path.
 
 Important: voice input should feed the same message pipeline as typed input wherever possible. There should not be two separate AI conversation implementations.
 

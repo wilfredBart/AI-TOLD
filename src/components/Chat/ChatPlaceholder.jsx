@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { extractFinalTranscript } from "../../lib/speech.js";
 
 const createWelcomeMessages = () => [
   { id: 1, sender: "ai", text: "Lokaal kanaal open." },
@@ -18,6 +19,7 @@ export default function ChatPlaceholder() {
   const [audioDevices, setAudioDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
   const [inputMode, setInputMode] = useState("text");
+  const [isListening, setIsListening] = useState(false);
   const [inputLevel, setInputLevel] = useState(0);
   const messagesEndRef = useRef(null);
   const sendingRef = useRef(false);
@@ -25,6 +27,7 @@ export default function ChatPlaceholder() {
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const meterAnimationRef = useRef(null);
+  const speechRecognitionRef = useRef(null);
   const [messages, setMessages] = useState(createWelcomeMessages);
 
   function addMessage(sender, text) {
@@ -87,6 +90,98 @@ export default function ChatPlaceholder() {
     testPipeline();
     loadAudioDevices();
   }, []);
+
+  function stopSpeechRecognition() {
+    const recognition = speechRecognitionRef.current;
+    if (!recognition) {
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      recognition.onend = null;
+      recognition.onerror = null;
+      recognition.onresult = null;
+      recognition.abort?.();
+      recognition.stop();
+    } catch (error) {
+      // no-op; some browsers throw when the recognizer has already ended
+    }
+
+    speechRecognitionRef.current = null;
+    setIsListening(false);
+  }
+
+  function startSpeechRecognition() {
+    if (typeof window === "undefined") return;
+
+    const RecognitionClass =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!RecognitionClass) {
+      setErrorMessage(
+        "Spraakherkenning is niet beschikbaar in deze browser. Gebruik tekstinvoer.",
+      );
+      setStatus("MIC UNAVAILABLE · SPEECH_RECOGNITION_UNSUPPORTED");
+      return;
+    }
+
+    stopSpeechRecognition();
+
+    const recognition = new RecognitionClass();
+    recognition.lang = "nl-NL";
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setStatus("LISTENING...");
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = extractFinalTranscript(Array.from(event.results));
+      if (!transcript) {
+        return;
+      }
+
+      setDraft((currentDraft) =>
+        currentDraft ? `${currentDraft} ${transcript}` : transcript,
+      );
+      setInputMode("text");
+      setStatus(`TRANSCRIPT READY · ${transcript}`);
+    };
+
+    recognition.onerror = (event) => {
+      const errorCode = event.error || "SPEECH_RECOGNITION_ERROR";
+      const message =
+        errorCode === "not-allowed"
+          ? "Spraakherkenning is geblokkeerd. Geef deze app toegang tot de microfoon."
+          : `Spraakherkenning faalde: ${errorCode}`;
+
+      setErrorMessage(message);
+      setStatus(`MIC UNAVAILABLE · ${errorCode}`);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      speechRecognitionRef.current = null;
+      setIsListening(false);
+      setStatus((currentStatus) => {
+        if (
+          currentStatus === "LISTENING..." ||
+          currentStatus.startsWith("TRANSCRIPT READY")
+        ) {
+          return "MIC READY";
+        }
+
+        return currentStatus;
+      });
+    };
+
+    speechRecognitionRef.current = recognition;
+    recognition.start();
+  }
 
   function stopAudioMeter() {
     if (meterAnimationRef.current) {
@@ -156,6 +251,7 @@ export default function ChatPlaceholder() {
         microphoneStreamRef.current = null;
       }
 
+      stopSpeechRecognition();
       stopAudioMeter();
     };
   }, []);
@@ -173,6 +269,7 @@ export default function ChatPlaceholder() {
       microphoneStreamRef.current.getTracks().forEach((track) => track.stop());
       microphoneStreamRef.current = null;
       stopAudioMeter();
+      stopSpeechRecognition();
       setMicrophoneEnabled(false);
       setMicrophoneMuted(false);
       setMicrophonePermission("idle");
@@ -218,8 +315,11 @@ export default function ChatPlaceholder() {
       setMicrophoneEnabled(true);
       setMicrophoneMuted(false);
       setMicrophonePermission("granted");
-      setStatus(`MIC READY · ${preferred.label || "PERMISSION GRANTED"}`);
       setErrorMessage(null);
+      startSpeechRecognition();
+      setStatus(
+        `MIC READY · ${preferred.label || "PERMISSION GRANTED"}`,
+      );
     } catch (error) {
       setMicrophoneEnabled(false);
       setMicrophonePermission("denied");
@@ -239,6 +339,7 @@ export default function ChatPlaceholder() {
       microphoneStreamRef.current.getTracks().forEach((track) => track.stop());
       microphoneStreamRef.current = null;
       stopAudioMeter();
+      stopSpeechRecognition();
       setMicrophoneEnabled(false);
       setMicrophoneMuted(false);
       setMicrophonePermission("idle");
@@ -391,9 +492,19 @@ export default function ChatPlaceholder() {
             type="button"
             className={`mode-slider ${inputMode === "mic" ? "mic" : "text"}`}
             onClick={() =>
-              setInputMode((currentMode) =>
-                currentMode === "text" ? "mic" : "text",
-              )
+              setInputMode((currentMode) => {
+                const nextMode = currentMode === "text" ? "mic" : "text";
+
+                if (nextMode === "text" && microphoneEnabled) {
+                  stopSpeechRecognition();
+                }
+
+                if (nextMode === "mic" && microphoneEnabled) {
+                  startSpeechRecognition();
+                }
+
+                return nextMode;
+              })
             }
             aria-label={`Schakel naar ${
               inputMode === "text" ? "microfoon" : "tekst"
@@ -488,10 +599,14 @@ export default function ChatPlaceholder() {
                 type="button"
                 onClick={handleMicrophonePermission}
                 disabled={testing}
-                aria-label="Microfoon toegang"
+                aria-label={
+                  isListening ? "Spraakherkenning stoppen" : "Microfoon toegang"
+                }
                 title={
                   microphoneEnabled
-                    ? "Microfoon uitzetten"
+                    ? isListening
+                      ? "Spraakherkenning stoppen"
+                      : "Microfoon uitzetten"
                     : "Microfoon toestemming vragen"
                 }
               >
