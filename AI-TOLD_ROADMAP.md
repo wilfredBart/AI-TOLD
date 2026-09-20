@@ -127,10 +127,12 @@ The project already contains the main desktop building blocks:
   - The frontend checks the message envelope rather than relying on raw exception strings.
   - The UI shows a clear fallback status such as `PIPELINE UNAVAILABLE · AI_PIPELINE_UNAVAILABLE · ...` when the service is not reachable.
 
-- [ ] 0.13 Establish project conventions
+- [x] 0.13 Establish project conventions
   - no TypeScript unless explicitly decided later
   - components remain small and focused
   - AI logic stays outside visual components
+  - keep the visual layer, desktop shell logic and AI/pipeline concerns separated and understandable
+  - prefer small, explicit modules over broad abstractions while the project is still being shaped
 
 Fase 0 klaar als: the existing desktop foundation is verified against the current codebase and the three main parts — UI, Tauri and AI-pipeline — have a clear separation.
 
@@ -450,15 +452,16 @@ Deze punten kunnen later veranderen, maar worden niet als basis van de eerste ve
 
 ## Log
 
-| Datum      | Stap | Wie          | Notitie                                                                                                                                                                                               |
-| ---------- | ---- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-20 | plan | Wilfred + AI | Roadmap herwerkt op basis van de bestaande AI-TOLD/Grok projectgeschiedenis en de huidige desktop-foundation.                                                                                         |
-| 2026-09-20 | 0.1  | Wilfred + AI | Bestaande Tauri/React/JavaScript desktop-shell als uitgangspunt vastgelegd in plaats van opnieuw als fundament te plannen.                                                                            |
-| 2026-09-20 | 0.2  | Wilfred + AI | Roadmapstructuur afgestemd op de werkwijze van `rack-docu-app`: één fase/punt tegelijk, testen door Wilfred, roadmap bijwerken na bevestiging.                                                        |
-| 2026-09-20 | 0.10 | Wilfred + AI | Frontend ↔ Tauri ↔ AI-pipeline contract gedefinieerd: frontend invokes Tauri commands; Tauri bridges to local Python HTTP service on 127.0.0.1:8765; capability permissions are part of the contract. |
-| 2026-09-20 | 0.11 | Wilfred + AI | Shared message envelope implemented across frontend, Tauri and AI-pipeline; /ping now returns a structured JSON object with type, requestId, source, target, payload and timestamp.                   |
+| Datum      | Stap | Wie          | Notitie                                                                                                                                                                                                                            |
+| ---------- | ---- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-20 | plan | Wilfred + AI | Roadmap herwerkt op basis van de bestaande AI-TOLD/Grok projectgeschiedenis en de huidige desktop-foundation.                                                                                                                      |
+| 2026-09-20 | 0.1  | Wilfred + AI | Bestaande Tauri/React/JavaScript desktop-shell als uitgangspunt vastgelegd in plaats van opnieuw als fundament te plannen.                                                                                                         |
+| 2026-09-20 | 0.2  | Wilfred + AI | Roadmapstructuur afgestemd op de werkwijze van `rack-docu-app`: één fase/punt tegelijk, testen door Wilfred, roadmap bijwerken na bevestiging.                                                                                     |
+| 2026-09-20 | 0.10 | Wilfred + AI | Frontend ↔ Tauri ↔ AI-pipeline contract gedefinieerd: frontend invokes Tauri commands; Tauri bridges to local Python HTTP service on 127.0.0.1:8765; capability permissions are part of the contract.                              |
+| 2026-09-20 | 0.11 | Wilfred + AI | Shared message envelope implemented across frontend, Tauri and AI-pipeline; /ping now returns a structured JSON object with type, requestId, source, target, payload and timestamp.                                                |
 | 2026-09-20 | 0.12 | Wilfred + AI | Backend unavailable handling added: Tauri now returns a structured `type: "error"` envelope with a `payload.code` such as `AI_PIPELINE_UNAVAILABLE`, and the frontend renders the fallback state instead of raw exception strings. |
-| 2026-09-20 | push | Wilfred + AI | Roadmap and protocol updates committed and pushed to origin/main after local validation with `cargo check` and `npm run build`.                                                                             |
+| 2026-09-20 | 0.13 | Wilfred + AI | Project conventions established: JavaScript remains the default unless a TypeScript decision is made later; components stay small and focused; AI logic remains outside UI components and visual concerns stay separate from backend logic. |
+| 2026-09-20 | log updated | Wilfred + AI | Roadmap and protocol updates committed and pushed to origin/main after local validation with `cargo check` and `npm run build`.                                                                                                    |
 
 ---
 
