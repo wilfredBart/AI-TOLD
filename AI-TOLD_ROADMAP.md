@@ -63,7 +63,7 @@ The project already contains the main desktop building blocks:
 - [x] 0.6 Dock / floating window behaviour
 - [x] 0.7 Window resizing
 - [x] 0.8 Global hotkey
-- [ ] 0.9 Re-verify the complete desktop foundation against the current repository
+- [x] 0.9 Re-verify the complete desktop foundation against the current repository
 
   Controleer één voor één:
 
@@ -93,6 +93,7 @@ The project already contains the main desktop building blocks:
   - AI actions → Fase 8
   - AI-created windows → Fase 9
   - Memory → Fase 10
+  
 - [ ] 0.10 Define frontend ↔ Tauri ↔ AI-pipeline communication
 - [ ] 0.11 Define one consistent message format between components
 - [ ] 0.12 Add basic error handling for unavailable AI-pipeline
