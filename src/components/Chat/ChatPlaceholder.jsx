@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
+const createWelcomeMessages = () => [
+  { id: 1, sender: "ai", text: "Lokaal kanaal open." },
+  { id: 2, sender: "ai", text: "MIC READY" },
+];
+
 export default function ChatPlaceholder() {
   const [status, setStatus] = useState("MIC READY");
   const [testing, setTesting] = useState(false);
@@ -8,10 +13,8 @@ export default function ChatPlaceholder() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [draft, setDraft] = useState("");
   const messagesEndRef = useRef(null);
-  const [messages, setMessages] = useState([
-    { id: 1, sender: "ai", text: "Lokaal kanaal open." },
-    { id: 2, sender: "ai", text: "MIC READY" },
-  ]);
+  const sendingRef = useRef(false);
+  const [messages, setMessages] = useState(createWelcomeMessages);
 
   function addMessage(sender, text) {
     setMessages((currentMessages) => [
@@ -24,14 +27,24 @@ export default function ChatPlaceholder() {
     ]);
   }
 
+  function resetConversation() {
+    if (sendingRef.current) return;
+
+    setMessages(createWelcomeMessages());
+    setErrorMessage(null);
+    setDraft("");
+    setStatus("MIC READY");
+  }
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   async function handleSend() {
     const text = draft.trim();
-    if (!text || testing || sending) return;
+    if (!text || testing || sendingRef.current) return;
 
+    sendingRef.current = true;
     setSending(true);
     setErrorMessage(null);
     setStatus("SENDING...");
@@ -68,6 +81,7 @@ export default function ChatPlaceholder() {
       setStatus("MIC UNAVAILABLE · AI_PIPELINE_UNAVAILABLE");
       addMessage("ai", fallbackMessage);
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }
@@ -163,6 +177,17 @@ export default function ChatPlaceholder() {
             )}
           </button>
         </div>
+
+        <button
+          className="clear-button"
+          type="button"
+          onClick={resetConversation}
+          disabled={sending || testing}
+          aria-label="Nieuwe conversatie"
+          title="Nieuwe conversatie"
+        >
+          Nieuw
+        </button>
 
         <button
           className="mic-button"
